@@ -1,0 +1,6 @@
+.cache/
+*.png
+*.gif
+__pycache__/
+venv/
+*.vim
