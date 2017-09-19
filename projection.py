@@ -16,54 +16,57 @@ POV = namedtuple('POV', 'coords, orientation, elevation, width, height')
 # height: angle in degree of the view from the y axis
 
 
-def projection(coords:(float, float, float), pov:POV, dot_radius:float=10) -> (float, float) or None:
+def projection(global_coords:(float, float, float), pov:POV, dot_radius:float=10,
+               verbose:bool=True) -> (float, float) or None:
     """Return (x, y, radius) of dot in 2D space for given POV, coords of the dot
     and its radius.
 
     If the dot is not in the POV field of view, returns None.
 
     """
-    _assertion_dist_ = distance_between(coords, pov.coords)
-    print('COORDS:', coords)
-    coords = coords_centered_on(coords, pov.coords)  # center on pov
-    print('CENTERED_COORDS:', coords)
+    coords = coords_centered_on(global_coords, pov.coords)  # center on pov
+    if verbose:
+        print('POV:', pov)
+        print('COORDS:', global_coords)
+        print('POV CENTERED_COORDS:', coords)
     distance = distance_to_origin(coords)
     x_angle_with_origin, y_angle_with_origin, z_angle_with_origin = angles_with_origin(coords)
-    print('ANGLES:', x_angle_with_origin, y_angle_with_origin, z_angle_with_origin)
-    assert distance == _assertion_dist_, "{} and {} are not equal".format(distance, _assertion_dist_)
+    if verbose:
+        print('ANGLES:', x_angle_with_origin, y_angle_with_origin, z_angle_with_origin)
+    _global_dist_ = distance_between(global_coords, pov.coords)
+    assert distance == _global_dist_, "{} and {} are not equal".format(distance, _global_dist_)
 
     # determine if the object is in field of view for the x axis
-    field_of_view_min_angle_x = pov.orientation - pov.width/2
-    field_of_view_max_angle_x = pov.orientation + pov.width/2
-    if field_of_view_min_angle_x <= x_angle_with_origin <= field_of_view_max_angle_x:
+    min_angle_x = pov.orientation - pov.width/2
+    max_angle_x = pov.orientation + pov.width/2
+    if min_angle_x <= x_angle_with_origin <= max_angle_x:
         pass  # the object is printable in x
     else:  # the object is out of the field of view
-        print('OUT:', field_of_view_min_angle_x, x_angle_with_origin, field_of_view_max_angle_x)
+        if verbose:
+            print('OUT:', min_angle_x, x_angle_with_origin, max_angle_x)
         return None
 
     # determine if the object is in field of view for the y axis
-    field_of_view_min_angle_y = pov.elevation - pov.height/2
-    field_of_view_max_angle_y = pov.elevation + pov.height/2
-    if field_of_view_min_angle_y <= y_angle_with_origin <= field_of_view_max_angle_y:
+    min_angle_y = pov.elevation - pov.height/2
+    max_angle_y = pov.elevation + pov.height/2
+    if min_angle_y <= y_angle_with_origin <= max_angle_y:
         pass  # the object is printable in y
     else:  # the object is out of the field of view
-        print('OUT:', field_of_view_min_angle_y, y_angle_with_origin, field_of_view_max_angle_y)
+        if verbose:
+            print('OUT:', min_angle_y, y_angle_with_origin, max_angle_y)
         return None
 
     # Determine the x coord of the object in the projection
-    proj_x = (x_angle_with_origin - field_of_view_min_angle_x) / (field_of_view_max_angle_x - field_of_view_min_angle_x)
-    proj_y = (y_angle_with_origin - field_of_view_min_angle_y) / (field_of_view_max_angle_y - field_of_view_min_angle_y)
+    proj_x = (x_angle_with_origin - min_angle_x) / (max_angle_x - min_angle_x)
+    proj_y = (y_angle_with_origin - min_angle_y) / (max_angle_y - min_angle_y)
     size = (1/distance) * dot_radius
-    print('PROJECTIONS:', proj_x, proj_y, size, distance)
-    print()
+    if verbose:
+        print('NODE PROJECTIONS:', proj_x, proj_y, '\tsize:', size, '\tdistance:', distance, end='\n\n')
     return proj_x, proj_y, size
 
 
 def angles_with_origin(coords:Coords) -> (float, float, float):
     """Return the angles formed by axis and (origin, coords)"""
-    # x = math.atan(math.sqrt(coords.y**2 + coords.z**2) / coords.x) if coords.x != 0 else 0
-    # y = math.atan(math.sqrt(coords.x**2 + coords.z**2) / coords.y) if coords.y != 0 else 0
-    # z = math.atan(math.sqrt(coords.x**2 + coords.y**2) / coords.z) if coords.z != 0 else 0
     dist = math.sqrt(coords.x**2 + coords.y**2 + coords.z**2)
     if dist == 0.:  return 0, 0, 0
     x = math.degrees(math.acos(coords.x / dist))
