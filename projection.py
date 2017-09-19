@@ -65,12 +65,11 @@ def angles_with_origin(coords:Coords) -> (float, float, float):
     # y = math.atan(math.sqrt(coords.x**2 + coords.z**2) / coords.y) if coords.y != 0 else 0
     # z = math.atan(math.sqrt(coords.x**2 + coords.y**2) / coords.z) if coords.z != 0 else 0
     dist = math.sqrt(coords.x**2 + coords.y**2 + coords.z**2)
-    x = math.degrees(math.asin(coords.x / dist)) if coords.x != 0 else 0
-    y = math.degrees(math.asin(coords.y / dist)) if coords.y != 0 else 0
-    z = math.degrees(math.asin(coords.z / dist)) if coords.z != 0 else 0
-    sign = lambda n: -1 if n < 0. else 1
-    sign = lambda n: 1
-    return x*sign(coords.x), y*sign(coords.y), z*sign(coords.z)
+    if dist == 0.:  return 0, 0, 0
+    x = math.degrees(math.acos(coords.x / dist))
+    y = math.degrees(math.acos(coords.y / dist))
+    z = math.degrees(math.acos(coords.z / dist))
+    return x, y, z
 
 def distance_to_origin(coords) -> float:
     return distance_between(coords, (0, 0, 0))
