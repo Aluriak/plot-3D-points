@@ -29,7 +29,8 @@ def points_on_circle(center:(float, float), radius:float, nb_point:int=10) -> (f
         yield x + center[0], y + center[1]
 
 
-def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png'):
+def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png',
+                  verbose:bool=True):
     """Draw a projection of given graph"""
     amplitudes, center = graph.amplitudes, graph.center
     pov_coords = Coords(*pov_coords)
@@ -39,20 +40,23 @@ def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png'):
         *projection.angles_with_origin(center_coords_centered)[:2],  # directed toward the center of the graph
         POV_WIDTH, POV_WIDTH,
     )
-    print('POV:', pov)
-    print('ANGLES OF CENTER:', projection.angles_with_origin(center))
+    if verbose:
+        print('POV:', pov)
+        print('ANGLES OF CENTER:', projection.angles_with_origin(center))
     nodes_projections = {
-        node: projection.projection(Coords(*node), pov)
+        node: projection.projection(Coords(*node), pov, verbose=verbose)
         for node in graph.nodes
     }
-    print('PROJECTIONS:', nodes_projections)
+    if verbose:
+        print('NODES PROJECTIONS:', nodes_projections)
     graph_2d = frozenset(
         (nodes_projections[source], nodes_projections[target])
         for source, target in graph.links
         if nodes_projections[source] and nodes_projections[target]
     )
-    print('GRAPH:', graph_2d)
-    draw_2d_graph(graph_2d, fname=fname)
+    if verbose:
+        print('2D GRAPH:', graph_2d)
+    draw_2d_graph(graph_2d, fname=fname, center=projection.projection(center, pov, verbose=verbose))
 
 
 def draw_2d_graph(graph:[(float, float, float), (float, float, float)], fname:str, width:int=400, height:int=400, nodes_color:dict={}):
