@@ -6,36 +6,17 @@ Nodes are points in the 3D space.
 
 import math
 import itertools
-from collections import namedtuple
 
 import imageio
 from PIL import Image, ImageDraw
 
+import graph as graph_module
+from graph import Graph
 import projection
 from projection import Coords, POV
 
 
 POV_WIDTH = 90
-Graph = namedtuple('Graph', 'links, center, nodes, dimensions, amplitudes')
-
-
-def graph_center(nodes:[(float, ..., float)]) -> (float, ..., float):
-    """Return the center of given nodes in space of whatever dimension"""
-    by_coords = tuple(zip(*nodes))
-    center = lambda s: ((max(s) - min(s)) / 2) + min(s)
-    return tuple(map(center, by_coords))
-
-def graph_dimensions(nodes:[(float, ..., float)]) -> float:
-    """Return the maximal difference of coords in each dimension"""
-    by_coords = tuple(zip(*nodes))
-    dims = lambda s: (max(s), min(s))
-    return tuple(map(dims, by_coords))
-
-def graph_amplitudes(nodes:[(float, ..., float)]) -> float:
-    """Return the amplitude of coords in each dimension"""
-    by_coords = tuple(zip(*nodes))
-    diff = lambda s: max(s) - min(s)
-    return tuple(map(diff, by_coords))
 
 
 def points_on_circle(center:(float, float), radius:float, nb_point:int=10) -> (float, float):
@@ -46,14 +27,6 @@ def points_on_circle(center:(float, float), radius:float, nb_point:int=10) -> (f
         x = cos(arc * doti) * radius
         y = sin(arc * doti) * radius
         yield x + center[0], y + center[1]
-
-
-def graph_from_edges(graph:[(float, float, float), (float, float, float)]) -> Graph:
-    nodes = frozenset(itertools.chain.from_iterable(graph))
-    print('NODES:', nodes)
-    center = Coords(*graph_center(nodes))
-    print('CENTER:', center)
-    return Graph(graph, center, nodes, graph_dimensions(nodes), graph_amplitudes(nodes))
 
 
 def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png'):
@@ -128,42 +101,26 @@ def write_gif(filenames, duration:float=1):
             writer.append_data(image)
 
 
-def draw_circle():
+def draw_circle(nb_point:int=1000):
     """Proof that points_on_circle works well"""
     im = Image.new('RGBA', (1000, 1000), 'black')
     draw = ImageDraw.Draw(im)
-    points = points_on_circle((500, 500), 100, nb_point=1000)
+    points = points_on_circle((500, 500), 100, nb_point=nb_point)
     size = 6
-    for x, y in points:
-        color = tuple([int((y / 300) * 255)] * 3 + [255])
+    for idx, (x, y) in enumerate(points):
+        color = (int((y / 300) * 255),) * 3 + (255,)
         color = 'white'
-        draw.rectangle((x-size/2, y-size/2, x+size/2, y+size/2), fill=color)
+        color = tuple([int(100 + 155 * idx / (nb_point))] * 3 + [255])
+        draw.point((x, y), fill=color)
+        # draw.rectangle((x-size/2, y-size/2, x+size/2, y+size/2), fill=color)
 
     im.save('circle.png')
 
 
 if __name__ == "__main__":
-    # draw_circle() ; exit()  # proof that it works
-    # graph = graph_from_edges((
-        # ((2, 1, 5), (1, 2, 5)),
-        # ((2, 3, 5), (1, 2, 5)),
-        # ((3, 2, 5), (1, 2, 5)),
-    # ))
-    graph = graph_from_edges((
-        ((50, 50, 10), (20, 20, 50)),
-        ((50, 50, 10), (20, 80, 50)),
-        ((50, 50, 10), (80, 20, 50)),
-        ((50, 50, 10), (80, 80, 50)),
+    # draw_circle() ; exit()  # proof that circle is a circleworks
 
-        ((20, 80, 50), (80, 80, 50)),
-        ((20, 80, 50), (20, 20, 50)),
-        ((80, 20, 50), (80, 80, 50)),
-        ((80, 20, 50), (20, 20, 50)),
-
-        ((50, 50, 70), (20, 20, 50)),
-        ((50, 50, 70), (20, 80, 50)),
-        ((50, 50, 70), (80, 20, 50)),
-        ((50, 50, 70), (80, 80, 50)),
-    ))
-    write_gif(run_things(graph, nb_point=100), duration=0.01)
-    # write_gif(run_things(graph, nb_point=1, fname_template='graph.png'))
+    # data = graph_module.cube()
+    data = graph_module.double_tetrahedron()
+    # write_gif(run_things(data, nb_point=100, verbose=False), duration=0.01)
+    write_gif(run_things(data, nb_point=1, fname_template='graph.png', verbose=True))
