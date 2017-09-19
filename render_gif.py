@@ -59,7 +59,9 @@ def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png',
     draw_2d_graph(graph_2d, fname=fname, center=projection.projection(center, pov, verbose=verbose))
 
 
-def draw_2d_graph(graph:[(float, float, float), (float, float, float)], fname:str, width:int=400, height:int=400, nodes_color:dict={}):
+def draw_2d_graph(graph:[(float, float, float), (float, float, float)],
+                  fname:str, width:int=400, height:int=400,
+                  nodes_color:dict={}, center:(float, float, float)=None):
     """
 
     Nodes are represented by 3 values: x position, y position and size.
@@ -74,7 +76,7 @@ def draw_2d_graph(graph:[(float, float, float), (float, float, float)], fname:st
     ))
 
     for (sx, sy, _), (tx, ty, _) in scaled_graph:  # source and target's x, y and size
-        print('EWFDZM:', sx, sy, tx, ty)
+        # print('EWFDZM:', sx, sy, tx, ty)
         draw.line(((sx, sy), (tx, ty)), fill='white')
 
     # draw the stars
@@ -83,18 +85,26 @@ def draw_2d_graph(graph:[(float, float, float), (float, float, float)], fname:st
         color = [int(size * 255)] * 3 + [255]
         draw.rectangle((x-size/2, y-size/2, x+size/2, y+size/2), fill=tuple(color))
 
+    # draw the center
+    if center:
+        x, y, size = center
+        x *= width
+        y *= height
+        draw.rectangle((x-size/2, y-size/2, x+size/2, y+size/2), fill='red')
+
     im.save(fname)
 
 
 def run_things(graph, nb_point=100, distance_to_object_factor:float=4.7,
-               fname_template:str='output/graph_{num:03d}.png'):
+               fname_template:str='output/graph_{num:03d}.png',
+               verbose:bool=True):
     dist_to_center = (max(graph.amplitudes[0], graph.amplitudes[2])/2) * distance_to_object_factor
     points = points_on_circle((graph.center.x, graph.center.z), dist_to_center, nb_point=nb_point)
     for n, (x, z) in enumerate(points, start=1):
         print('CIRCLING BY:', x , z)
         fname = fname_template.format(num=n)
         draw_3d_graph(graph, pov_coords=Coords(x, graph.center.y, z),
-                      fname=fname)
+                      fname=fname, verbose=verbose)
         yield fname
 
 
