@@ -47,6 +47,7 @@ def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png',
         node: projection.projection(Coords(*node), pov, verbose=verbose)
         for node in graph.nodes
     }
+    draw_map(pov, nodes_projections, center, center_coords_centered)
     if verbose:
         print('NODES PROJECTIONS:', nodes_projections)
     graph_2d = frozenset(
@@ -57,6 +58,65 @@ def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png',
     if verbose:
         print('2D GRAPH:', graph_2d)
     draw_2d_graph(graph_2d, fname=fname, center=projection.projection(center, pov, verbose=verbose))
+
+
+ITER = 0
+def draw_map(pov:POV, projections:dict, center:Coords, relative_center:Coords,
+             fname:str='maps/map_{num:03d}.png', size:int=400):
+    assert pov.coords.y == center.y
+    REC = 4  # points semi-size
+    im = Image.new('RGBA', (size, size), 'black')
+    draw = ImageDraw.Draw(im)
+    # draw various dot objects
+    focus = lambda x, z: (x + size // 2 - center.x, z + size // 2 - center.z)
+    # focus = lambda x: x + size // 2
+    rectangle_at = lambda x, z, col: draw.rectangle((*focus(x-REC, z-REC), *focus(x+REC, z+REC)), fill=col)
+    rectangle_at(pov.coords.x, pov.coords.z, 'blue')  # pov position
+    rectangle_at(center.x, center.z, 'red')  # absolute center of the graph
+    rectangle_at(relative_center.x, relative_center.z, 'yellow')  # center relative to pov position when placed at the center of image
+
+    for coords, ratios in projections.items():
+        # print the node itself
+        rectangle_at(coords[0], coords[2], 'white')
+        # print a line on which the node should be.
+        point_one = pov.coords.x, pov.coords.z
+        # computation of point two
+        ratio_x, _, _ = ratios
+        print('RATIO:', ratio_x)
+        # geometry power: what is the angle of this line with the x axis ?
+        #  you probably need pen and paper to understand this, by drawing it.
+        #  this is basically the function that maps the x position of the node
+        #  with its angle with POV's orientation axis.
+        line_angle = math.radians(pov.orientation) - math.atan(
+            abs((0.5 - ratio_x) * size)  # the section of the screen between center and point to print
+            /  # opposite side over adjacent side
+            ((size/2) / math.tan(math.radians(90 - pov.width / 2)))
+        )
+        print('LINE ANGLE:', line_angle, '\tin degrees:', math.degrees(line_angle))
+        dist_on_x = 220
+        point_two = (
+            center.x - pov.coords.x + dist_on_x,
+            center.z - pov.coords.z + dist_on_x * math.tan(line_angle)
+        )
+        draw.line((*focus(*point_one), *focus(*point_two)), fill='white')
+
+    # print the orientation of the POV
+    point_one = pov.coords.x, pov.coords.z
+    dist_on_z = 200
+    print('ORIENTATION:', pov.orientation, math.radians(pov.orientation))
+    line_angle = math.radians(pov.orientation)  # the remaining expression equals atan(0) == 0
+    print('LINE ANGLE:', line_angle, '\tin degrees:', math.degrees(line_angle))
+    dist_on_x = 220
+    point_two = (
+        center.x - pov.coords.x + dist_on_x,
+        center.z - pov.coords.z + dist_on_x * math.tan(line_angle)
+    )
+    draw.line((*focus(*point_one), *focus(*point_two)), fill='red')
+
+
+    global ITER
+    im.save(fname.format(num=ITER))
+    ITER += 1
 
 
 def draw_2d_graph(graph:[(float, float, float), (float, float, float)],
