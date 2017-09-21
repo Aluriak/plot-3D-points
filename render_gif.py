@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw
 
 import graph as graph_module
 from graph import Graph
+import geometry
 import projection
 from projection import Coords, POV
 
@@ -29,25 +30,22 @@ def points_on_circle(center:(float, float), radius:float, nb_point:int=10) -> (f
         yield x + center[0], y + center[1]
 
 
-def draw_3d_graph(graph:Graph, pov_coords:POV, fname:str='graph.png',
+def draw_3d_graph(graph:Graph, pov_coords:Coords, fname:str='graph.png',
                   verbose:bool=True):
     """Draw a projection of given graph"""
     amplitudes, center = graph.amplitudes, graph.center
     pov_coords = Coords(*pov_coords)
-    center_coords_centered = projection.coords_centered_on(center, pov_coords)
-    pov = projection.POV(
-        pov_coords,
-        *projection.angles_with_origin(center_coords_centered)[:2],  # directed toward the center of the graph
-        POV_WIDTH, POV_WIDTH,
-    )
+    pov = projection.create_pov_toward(center, pov_coords)
+    print('CENTER PROJECTION:', projection.projection(center, pov, verbose=verbose))
+    # exit()
     if verbose:
         print('POV:', pov)
-        print('ANGLES OF CENTER:', projection.angles_with_origin(center))
+        # print('ANGLES OF CENTER:', geometry.angles_from_coords(geometry.coords_centered_on(center, pov.coords)))
     nodes_projections = {
         node: projection.projection(Coords(*node), pov, verbose=verbose)
         for node in graph.nodes
     }
-    draw_map(pov, nodes_projections, center, center_coords_centered)
+    # draw_map(pov, nodes_projections, center, center)
     if verbose:
         print('NODES PROJECTIONS:', nodes_projections)
     graph_2d = frozenset(
