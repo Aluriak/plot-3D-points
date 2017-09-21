@@ -14,8 +14,9 @@ def coords_in_system(point:Coords, system_origin:Coords,
     of given origin and with given angles (in degrees) with the standard system.
 
     """
-    rotated = with_rotated_axis(point, system_rotation)
-    return coords_centered_on(rotated, system_origin)
+    point = coords_centered_on(point, system_origin)
+    point = with_rotated_axis(point, system_rotation)
+    return point
 
 
 def with_rotated_axis(point:Coords, rotation:Coords) -> Coords:

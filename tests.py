@@ -76,5 +76,5 @@ def test_coords_in_system():
 
     # now, rotation and translation !
     for x in range(-90, 90, 20):
-        assert rounded(coords_in_system(null, a, Coords(0, 0, x))) == rounded(Coords(-1, -1, 0))
+        assert rounded(coords_in_system(Coords(1, 1, 10), a, Coords(0, 0, x))) == rounded(Coords(0, 0, 10))
     assert rounded(coords_in_system(a, null, Coords(0, -90, 0))) == rounded(Coords(0, 1, -1))
